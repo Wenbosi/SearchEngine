@@ -11,9 +11,10 @@ def search(request):
         max_width: 最大宽度
         min_height: 最小高度
         max_height: 最大高度
+        color: 赤橙黄绿青蓝紫粉棕灰白黑 12位01串 1表示筛选对应颜色
 
     @返回：
-        包含所有结果id的list
+        results: 包含所有结果id的list
     """
     body = json.loads(request.body)
     key = body['key'].upper() if 'key' in body else ''
@@ -21,14 +22,15 @@ def search(request):
     max_width = body['max_width'] if 'max_width' in body else ''
     min_height = body['min_height'] if 'min_height' in body else 0
     max_height = body['max_height'] if 'max_height' in body else ''
+    color = body['color'] if 'color' in body else '0' * 12
 
     res = []
 
-    data = {}
-    with open(BASE_DIR / 'data' / 'metadata.json') as f:
-        data = json.loads(f.read())
+    datas = {}
+    with open(BASE_DIR / 'data' / 'metadata_c.json') as f:
+        datas = json.loads(f.read())
     
-    for id, data in data.items():
+    for id, data in datas.items():
         found_key = False
         for label in data[0]:
             if key in label.upper():
@@ -40,7 +42,12 @@ def search(request):
         if max_height != '' and data[2] > max_height:
             size_ok = False
 
-        if found_key and size_ok:
+        color_ok = True
+        for i in range(12):
+            if color[i] == '1' and data[3+i] == 0:
+                color_ok = False
+
+        if found_key and size_ok and color_ok:
             res.append(id)
 
     return JsonResponse({"results": res})
