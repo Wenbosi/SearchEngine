@@ -1,6 +1,7 @@
 import json
 from ..settings import BASE_DIR
 from django.http import JsonResponse
+import datetime
 
 def search(request):
     """
@@ -8,14 +9,18 @@ def search(request):
     @参数：
         key: 文字信息
         min_width: 最小宽度
-        max_width: 最大宽度
+        max_width: 最大宽度，''代表无限制
         min_height: 最小高度
-        max_height: 最大高度
+        max_height: 最大高度，''代表无限制
         color: 赤橙黄绿青蓝紫粉棕灰白黑 12位01串 1表示筛选对应颜色
 
-    @返回：
+    @返回json：
+        count: 结果数量
+        time: 搜索用时
         results: 包含所有结果id的list
     """
+    start = datetime.datetime.now()
+
     body = json.loads(request.body)
     key = body['key'].upper() if 'key' in body else ''
     min_width = body['min_width'] if 'min_width' in body else 0
@@ -50,4 +55,7 @@ def search(request):
         if found_key and size_ok and color_ok:
             res.append(id)
 
-    return JsonResponse({"results": res})
+    return JsonResponse({
+        "count": len(res),
+        "time": datetime.datetime.now() - start,
+        "results": res})
