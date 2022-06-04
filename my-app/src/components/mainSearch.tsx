@@ -16,14 +16,16 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import DialogContentText from '@mui/material/DialogContentText';
 
-import { Test } from "../communication/communication";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 function MainSearch() {
     const history = useHistory();
     const [keyword, setKeyword] = useState('');
 
     const [open, setOpen] = useState(false);
+    const [aopen, setAopen] = useState(false);
     const [selectedFile, setSelectedFile] = useState('');
 
     const handleClickOpen = () => {
@@ -34,9 +36,25 @@ function MainSearch() {
       setOpen(false);
     };
 
+    const handleAClickOpen = () => {
+      setAopen(true);
+    };
+  
+    const handleAClose = () => {
+      setAopen(false);
+    };
+
     const selecteFileHandler = (event) => {
       setSelectedFile(event.target.files[0]);
     };
+
+    
+    const {
+      transcript,
+      listening,
+      resetTranscript,
+      browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
 
     
     return (
@@ -56,6 +74,10 @@ function MainSearch() {
           <Tooltip title="语音输入">
             <IconButton
               sx={{ p: '10px' }}
+              onClick={() => {
+                resetTranscript()
+                handleAClickOpen()
+              }}
             >
               <KeyboardVoiceIcon />
             </IconButton>
@@ -76,7 +98,7 @@ function MainSearch() {
               onClick={() => {
                 if(keyword !== "") {
                   history.push(`/keyword=${keyword}`);
-                  Test('test1', 'test56')
+                  // Test('test1', 'test56')
                 }
               }}
             >
@@ -96,6 +118,29 @@ function MainSearch() {
         <DialogActions>
           <Button onClick={handleClose}>关闭</Button>
           <Button onClick={handleClose}>确认</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={aopen} onClose={handleAClose}>
+        <DialogTitle>语音输入</DialogTitle>
+        <DialogContent>
+        <div>
+          <p>Microphone: {listening ? 'on' : 'off'}</p>
+            <button onClick={SpeechRecognition.startListening}>Start</button>
+            <button onClick={SpeechRecognition.stopListening}>Stop</button>
+            <button onClick={resetTranscript}>Reset</button>
+            <p>{transcript}</p>
+        </div>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+          onClick={() => {
+              resetTranscript()
+              handleAClose()
+            }}
+            >
+              关闭</Button>
+          <Button onClick={handleAClose}>确认</Button>
         </DialogActions>
       </Dialog>
 
