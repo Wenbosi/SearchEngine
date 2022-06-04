@@ -1,6 +1,7 @@
 import './result.css';
 import tsinghua from '../images/tsinghua.png'
 import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
 import Paper from '@mui/material/Paper';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
@@ -13,6 +14,7 @@ import Pagination from '@mui/material/Pagination';
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Divider from '@mui/material/Divider';
+import Stack from '@mui/material/Stack';
 
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
@@ -29,6 +31,12 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import CircleIcon from '@mui/icons-material/Circle';
+import { red, orange, yellow, green, grey, blue, brown, cyan, purple } from '@mui/material/colors';
+
+import InputAdornment from '@mui/material/InputAdornment';
+import Typography from '@mui/material/Typography';
+
 
 function Result() {
     const [keyword, setKeyword] = useState('');
@@ -43,16 +51,7 @@ function Result() {
     const [color, setColor] = useState('');
     const [size, setSize] = useState('');
 
-    const handleChangeColor = (event) => {
-      setColor(event.target.value);
-    };
-
-    const handleChangeSize = (event) => {
-        setSize(event.target.value);
-    };
-
-    const [open, setOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState('');
+    const [copen, setCopen] = useState(false);
 
     const handleClickOpen = () => {
       setOpen(true);
@@ -62,20 +61,58 @@ function Result() {
       setOpen(false);
     };
 
+    const handleCClickOpen = () => {
+      setCopen(true);
+    };
+  
+    const handleCClose = () => {
+      setCopen(false);
+    };
+
+    const handleChangeColor = (event) => {
+      setColor(event.target.value);
+    };
+
+    const handleChangeSize = (event) => {
+        setSize(event.target.value);
+        setMinL("")
+        setMinW("")
+        setMaxL("")
+        setMaxW("")
+        if(event.target.value === 6)
+          handleCClickOpen();
+    };
+
+    const [open, setOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState('');
+
     const selecteFileHandler = (event) => {
       setSelectedFile(event.target.files[0]);
     };
+
+    const [minL, setMinL] = useState('')
+    const [minW, setMinW] = useState('')
+    const [maxL, setMaxL] = useState('')
+    const [maxW, setMaxW] = useState('')
+
+    const [show, setShow] = useState(true)
 
 
     return (
         <div className="App1">
             <div className="search">
                 <div className='block'>
-            <img src={tsinghua} className="App-logo1" alt="" />
-            <Paper component="form" elevation={4} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 600 }}>
+                  <img 
+                    src={tsinghua} 
+                    className="App-logo1" 
+                    alt="" 
+                    onClick={() => {
+                      history.push(`/`);
+                    }}/>
+                  <Paper component="form" elevation={4} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 600 }}>
                 <InputBase 
                     sx={{ ml: 1, flex: 1 }} 
-                    defaultValue={keys[len - 1].substring(8)}
+                    defaultValue={decodeURIComponent(keys[len - 1].substring(8))}
                     onChange={(event) => {
                         setKeyword(event.target.value);
                     }}
@@ -110,11 +147,21 @@ function Result() {
                         <SearchIcon/> 
                     </IconButton>
                 </Tooltip>
-                </Paper>
+                  </Paper>
                 </div>
             </div>
-        <div>
-      <FormControl sx={{ m: 1, minWidth: 120, marginRight: 6}}>
+          <div>
+            <Divider variant='middle'></Divider>
+      <FormControl>
+        <Typography 
+            variant="subtitle1" 
+            gutterBottom component="div" 
+            sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
+        >
+          谷歌为您找到相关结果共{100}个，耗时约{120}毫秒
+        </Typography>
+      </FormControl>
+      <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginRight: 6, marginTop: 3}}>
         <InputLabel>图片尺寸</InputLabel>
         <Select
           value={size}
@@ -126,31 +173,134 @@ function Result() {
           <MenuItem value={3}>中</MenuItem>
           <MenuItem value={4}>大</MenuItem>
           <MenuItem value={5}>特大</MenuItem>
+          <MenuItem 
+            value={6}
+            onClick={
+              ()=>{
+                if(copen === false)
+                  setCopen(true)
+              }
+            }>自定义</MenuItem>
         </Select>
       </FormControl>
-      <FormControl sx={{ m: 1, minWidth: 120}}>
+      <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginTop: 3}}>
         <InputLabel>图片颜色</InputLabel>
         <Select
           value={color}
           label="图片颜色"
           onChange={handleChangeColor}
         >
-          <MenuItem value={1}>全部</MenuItem>
-          <MenuItem value={2}>红</MenuItem>
-          <MenuItem value={3}>黄</MenuItem>
-          <MenuItem value={4}>蓝</MenuItem>
+          <MenuItem value={1}>
+              全部
+          </MenuItem>
+          <MenuItem value={2}>
+              彩色
+          </MenuItem>
+          <MenuItem value={3}>
+              黑白
+          </MenuItem>
+          <MenuItem value={4}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:red[500]
+              }}/>
+            红
+          </MenuItem>
+          <MenuItem value={5}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:orange[500]
+              }}/>
+            橙
+          </MenuItem>
+          <MenuItem value={6}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:yellow[500]
+              }}/>
+            黄
+          </MenuItem>
+          <MenuItem value={7}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:green[500]
+              }}/>
+            红
+          </MenuItem>
+          <MenuItem value={8}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:cyan[500]
+              }}/>
+            青
+          </MenuItem>
+          <MenuItem value={9}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:blue[500]
+              }}/>
+            蓝
+          </MenuItem>
+          <MenuItem value={10}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:purple[500]
+              }}/>
+            紫
+          </MenuItem>
+          <MenuItem value={11}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:brown[500]
+              }}/>
+            棕
+          </MenuItem>
+          <MenuItem value={12}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:grey[500]
+              }}/>
+            灰
+          </MenuItem>
         </Select>
       </FormControl>
-    </div>
+        </div>
+      
+      {show &&  <FormControl>
+            <Stack spacing={2} direction="row" sx={{display: 'flex', alignItems: 'center'}}>
+              <Typography variant="body1" gutterBottom component="div" sx={{ m: 1, marginRight: 0}}>
+                您要找的是不是：
+              </Typography>
+              <Button variant="text" sx={{ m: 1, marginLeft: 0, paddingLeft:0}}>王鸿杰</Button>
+            </Stack>
+            </FormControl> }
 
         <div className='photo'>
         <Box sx={{ width: 1600}}>
-        <ImageList  cols={8}>
+        <ImageList  cols={6}>
         {itemData.map((item) => (
             <ImageListItem key={item.img}>
                 <img
-                    src={`${item.img}?w=161&fit=crop&auto=format`}
-                    srcSet={`${item.img}?w=161&fit=crop&auto=format&dpr=2 2x`}
+                    src={`${item.img}?w=242&fit=crop&auto=format`}
+                    srcSet={`${item.img}?w=242&fit=crop&auto=format&dpr=2 2x`}
                     alt={item.title}
                     loading="lazy"
                 />
@@ -161,6 +311,10 @@ function Result() {
                 <IconButton
                     sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
                     aria-label={`info about ${item.title}`}
+                    onClick={
+                      ()=>{
+                        window.open(item.img);
+                      }}
                 >
                     <InfoIcon />
                     </IconButton>
@@ -186,15 +340,97 @@ function Result() {
                 showLastButton/>
         </div>
         <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>以图搜图</DialogTitle>
-        <DialogContent>
-        <input style={{display:'block', alignItems: 'center'}} type="file" accept="image/*" onChange={selecteFileHandler}/>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>关闭</Button>
-          <Button onClick={handleClose}>确认</Button>
-        </DialogActions>
-      </Dialog>
+          <DialogTitle>以图搜图</DialogTitle>
+            <DialogContent>
+              <input style={{display:'block', alignItems: 'center'}} type="file" accept="image/*" onChange={selecteFileHandler}/>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleClose}>关闭</Button>
+              <Button onClick={handleClose}>确认</Button>
+            </DialogActions>
+        </Dialog>
+
+        <Dialog open={copen} onClose={handleCClose}>
+          <DialogTitle>自定义图片大小</DialogTitle>
+            <DialogContent>
+            <Box 
+                component="form"
+                sx={{'& .MuiTextField-root': { m: 1, width: '25ch' }}}
+                noValidate
+                autoComplete="off">
+            <div>
+            <TextField 
+              id="outlined-basic" 
+              label="最小长度"
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">px</InputAdornment>,
+              }}
+              onChange={
+                (event) => {
+                  setMinL(event.target.value);
+                }
+              }
+              />
+            <TextField 
+              id="outlined-basic" 
+              label="最小宽度"
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">px</InputAdornment>,
+              }}
+              onChange={
+                (event) => {
+                  setMinW(event.target.value);
+                }
+              }
+              />
+            </div>
+            <div>
+              <TextField 
+              id="outlined-basic" 
+              label="最大长度"
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">px</InputAdornment>,
+              }}
+              onChange={
+                (event) => {
+                  setMaxL(event.target.value);
+                }
+              }
+              />
+              <TextField 
+              id="outlined-basic" 
+              label="最大宽度"
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">px</InputAdornment>,
+              }}
+              onChange={
+                (event) => {
+                  setMaxW(event.target.value);
+                }
+              } 
+              />
+            </div>
+            </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={
+                ()=>{
+                  setMinL("")
+                  setMinW("")
+                  setMaxL("")
+                  setMaxW("")
+                  handleCClose()
+                  }}>关闭</Button>
+              <Button onClick={
+                ()=>{
+                  handleCClose()
+                }}>确认</Button>
+            </DialogActions>
+        </Dialog>
     </div>
     );
 }
