@@ -98,13 +98,10 @@ function MainSearch() {
               onClick={() => {
                 if(keyword !== "") {
                   history.push(`/keyword=${keyword}`);
-                  // Test('test1', 'test56')
                 }
               }}
             >
-
               <SearchIcon/>
-            
             </IconButton>
           </Tooltip>
         </Paper>

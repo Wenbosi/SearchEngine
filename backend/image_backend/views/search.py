@@ -3,6 +3,14 @@ from ..settings import BASE_DIR
 from django.http import JsonResponse
 import datetime
 
+
+def gen_response(code: int, data: str):
+    return JsonResponse({
+        'code': code,
+        'data': data
+    }, status=code)
+
+
 def correct(key):
     """
     若无法找到key对应的label，猜测输入错误，返回可能正确的输入（否则为''）
@@ -48,9 +56,8 @@ def predict(request):
             if len(predictions) > 10:
                 break
     
-    return JsonResponse({
-        "predictions": predictions,
-    })
+    data = { "predictions": predictions }
+    return gen_response(200, data)
 
 def search(request):
     """
@@ -75,6 +82,7 @@ def search(request):
     start = datetime.datetime.now()
 
     body = json.loads(request.body)
+    print(body)
     key = body['key'].upper() if 'key' in body else ''
     min_width = body['min_width'] if 'min_width' in body else 0
     max_width = body['max_width'] if 'max_width' in body else ''
@@ -111,10 +119,19 @@ def search(request):
                 color_ok = False
 
         if found_key and size_ok and color_ok:
-            res.append({"id": id, "labels": data[0]})
+            res.append({"id": id, "labels": data[0], "width": data[1], "height": data[2]})
 
-    return JsonResponse({
+    if len(res) < page * 36:
+        results = res[36 * (page - 1) : ]
+    else:
+        results = res[36 * (page - 1) : 36 * page]
+
+    data = {
         "count": len(res),
+        "pages": (len(res) - 1) // 36 + 1,
         "time": (datetime.datetime.now() - start).total_seconds(),
         "correction": correction,
-        "results": res if page == '' else res[36*page: 36*(page+1)]})
+        "results": results
+    }
+    
+    return gen_response(200, data)

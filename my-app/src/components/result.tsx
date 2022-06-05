@@ -37,21 +37,39 @@ import { red, orange, yellow, green, grey, blue, brown, cyan, purple } from '@mu
 import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 
+import { Search } from '../communication/communication';
+
 
 function Result() {
     const [keyword, setKeyword] = useState('');
     const history = useHistory();
-    const keys = window.location.href.split('/');
+    let keys = window.location.href.split('/');
     const len = keys.length;
+    const [color, setColor] = useState(1);
+    const [size, setSize] = useState(0);
+    const [copen, setCopen] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState('');
+    const [minW, setMinW] = useState(0)
+    const [minH, setMinH] = useState(0)
+    const [maxW, setMaxW] = useState(10000)
+    const [maxH, setMaxH] = useState(10000)
+    const [show, setShow] = useState(false)
+    const [itemData, setItemData] = useState([])
+    const [count, setCount] = useState(0)
+    const [pages, setPages] = useState(0)
+    const [time, setTime] = useState(0.0)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [correction, setCorrection] = useState("")
+
     useEffect(() => {
-        setKeyword(keys[len - 1].substring(8))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      setKeyword(keys[len - 1].substring(8))
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
-    const [color, setColor] = useState('');
-    const [size, setSize] = useState('');
-
-    const [copen, setCopen] = useState(false);
+    const selecteFileHandler = (event) => {
+      setSelectedFile(event.target.files[0]);
+    };
 
     const handleClickOpen = () => {
       setOpen(true);
@@ -74,38 +92,62 @@ function Result() {
     };
 
     const handleChangeSize = (event) => {
-        setSize(event.target.value);
-        setMinL("")
-        setMinW("")
-        setMaxL("")
-        setMaxW("")
-        if(event.target.value === 6)
-          handleCClickOpen();
-    };
+      setSize(event.target.value);
+      setMinW(0)
+      setMinH(0)
+      setMaxW(10000)
+      setMaxH(10000)
+      if(event.target.value === 0 || event.target.value === 1 || event.target.value === 2 || event.target.value === 3) {
+        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", currentPage, event.target.value)
+      }
+      else if(event.target.value === 5)
+        handleCClickOpen();
+  };
 
-    const [open, setOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState('');
+    const search = (key, path, min_width, min_height, max_width, max_height, color, page, size) => {
+      const message = {
+        key : key,
+        path : path,
+        min_width : min_width,
+        min_height : min_height,
+        max_width : max_width,
+        max_height : max_height,
+        color : color,
+        page : page,
+        size : size,
+      }
+      Search(message)
+      .then(
+          (responce) => {
+              setItemData(responce.data)
+              if(responce.correction !== '') {
+                setShow(true)
+                setCorrection(responce.correction)
+              }
+              else
+                setShow(false)
+              setCount(responce.count)
+              setPages(responce.pages)
+              setTime(responce.time)
+          }
+      )
+      .catch(
+          (responce) => {}
+      )
+    }
 
-    const selecteFileHandler = (event) => {
-      setSelectedFile(event.target.files[0]);
-    };
 
-    const [minL, setMinL] = useState('')
-    const [minW, setMinW] = useState('')
-    const [maxL, setMaxL] = useState('')
-    const [maxW, setMaxW] = useState('')
-
-    const [show, setShow] = useState(true)
+    useEffect(() => {
+        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", 1, -1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[]);
 
 
     return (
         <div className="App1">
             <div className="search">
                 <div className='block'>
-                  <img 
-                    src={tsinghua} 
-                    className="App-logo1" 
-                    alt="" 
+                  <img src={tsinghua} className="App-logo1" alt="" 
                     onClick={() => {
                       history.push(`/`);
                     }}/>
@@ -139,8 +181,12 @@ function Result() {
                     <IconButton 
                         sx={{ p: '10px' }}
                         onClick={() => {
-                        if(keyword !== "") {
+                          if(keyword !== "") {
                             history.push(`/keyword=${keyword}`);
+                            setCurrentPage(1)
+                            setSize(0)
+                            search(keyword, "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                            keys = window.location.href.split('/');
                         }
                     }}
                 >
@@ -158,7 +204,7 @@ function Result() {
             gutterBottom component="div" 
             sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
         >
-          谷歌为您找到相关结果共{100}个，耗时约{120}毫秒
+          谷歌为您找到相关结果共{count}个，耗时约{time}毫秒
         </Typography>
       </FormControl>
       <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginRight: 6, marginTop: 3}}>
@@ -168,13 +214,12 @@ function Result() {
           label="图片尺寸"
           onChange={handleChangeSize}
         >
-          <MenuItem value={1}>全部</MenuItem>
-          <MenuItem value={2}>小</MenuItem>
-          <MenuItem value={3}>中</MenuItem>
-          <MenuItem value={4}>大</MenuItem>
-          <MenuItem value={5}>特大</MenuItem>
+          <MenuItem value={0}>全部</MenuItem>
+          <MenuItem value={1}>小</MenuItem>
+          <MenuItem value={2}>中</MenuItem>
+          <MenuItem value={3}>大</MenuItem>
           <MenuItem 
-            value={6}
+            value={5}
             onClick={
               ()=>{
                 if(copen === false)
@@ -289,7 +334,19 @@ function Result() {
               <Typography variant="body1" gutterBottom component="div" sx={{ m: 1, marginRight: 0}}>
                 您要找的是不是：
               </Typography>
-              <Button variant="text" sx={{ m: 1, marginLeft: 0, paddingLeft:0}}>王鸿杰</Button>
+              <Button 
+                variant="text" 
+                sx={{ m: 1, marginLeft: 0, paddingLeft:0}}
+                onClick={
+                  ()=>{
+                    history.push(`/keyword=${correction}`);
+                    setCurrentPage(1)
+                    setSize(0)
+                    search(correction, "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                    window.location.reload()
+                  }
+                }
+                >{correction}</Button>
             </Stack>
             </FormControl> }
 
@@ -299,18 +356,20 @@ function Result() {
         {itemData.map((item) => (
             <ImageListItem key={item.img}>
                 <img
-                    src={`${item.img}?w=242&fit=crop&auto=format`}
-                    srcSet={`${item.img}?w=242&fit=crop&auto=format&dpr=2 2x`}
-                    alt={item.title}
+                    // src={`${item.img}?w=242&fit=crop&auto=format`}
+                    // srcSet={`${item.img}?w=242&fit=crop&auto=format&dpr=2 2x`}
+                    src={`${item.img}`}
+                    srcSet={`${item.img}`}
+                    alt={item.label}
                     loading="lazy"
                 />
             <ImageListItemBar
-                title={item.title}
-                subtitle={item.author}
+                title={item.label}
+                subtitle={item.width + " * " + item.height}
                 actionIcon={
                 <IconButton
                     sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                    aria-label={`info about ${item.title}`}
+                    aria-label={`info about ${item.label}`}
                     onClick={
                       ()=>{
                         window.open(item.img);
@@ -330,12 +389,13 @@ function Result() {
             <Pagination
                 onChange={
                     (event, value) => {
-                        console.log(value)
+                      setCurrentPage(value)
+                      search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", value, size)
                     }
                 }
-                count={11} 
-                defaultPage={6} 
-                boundaryCount={1} 
+                count={pages} 
+                defaultPage={1} 
+                boundaryCount={1}
                 showFirstButton 
                 showLastButton/>
         </div>
@@ -351,7 +411,7 @@ function Result() {
         </Dialog>
 
         <Dialog open={copen} onClose={handleCClose}>
-          <DialogTitle>自定义图片大小</DialogTitle>
+          <DialogTitle>自定义图片尺寸筛选</DialogTitle>
             <DialogContent>
             <Box 
                 component="form"
@@ -361,19 +421,6 @@ function Result() {
             <div>
             <TextField 
               id="outlined-basic" 
-              label="最小长度"
-              type="number"
-              InputProps={{
-                endAdornment: <InputAdornment position="end">px</InputAdornment>,
-              }}
-              onChange={
-                (event) => {
-                  setMinL(event.target.value);
-                }
-              }
-              />
-            <TextField 
-              id="outlined-basic" 
               label="最小宽度"
               type="number"
               InputProps={{
@@ -381,25 +428,25 @@ function Result() {
               }}
               onChange={
                 (event) => {
-                  setMinW(event.target.value);
+                  setMinW(parseInt(event.target.value));
                 }
               }
               />
-            </div>
-            <div>
-              <TextField 
+            <TextField 
               id="outlined-basic" 
-              label="最大长度"
+              label="最小高度"
               type="number"
               InputProps={{
                 endAdornment: <InputAdornment position="end">px</InputAdornment>,
               }}
               onChange={
                 (event) => {
-                  setMaxL(event.target.value);
+                  setMinH(parseInt(event.target.value));
                 }
               }
               />
+            </div>
+            <div>
               <TextField 
               id="outlined-basic" 
               label="最大宽度"
@@ -409,7 +456,20 @@ function Result() {
               }}
               onChange={
                 (event) => {
-                  setMaxW(event.target.value);
+                  setMaxW(parseInt(event.target.value));
+                }
+              }
+              />
+              <TextField 
+              id="outlined-basic" 
+              label="最大高度"
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">px</InputAdornment>,
+              }}
+              onChange={
+                (event) => {
+                  setMaxH(parseInt(event.target.value));
                 }
               } 
               />
@@ -419,14 +479,15 @@ function Result() {
             <DialogActions>
               <Button onClick={
                 ()=>{
-                  setMinL("")
-                  setMinW("")
-                  setMaxL("")
-                  setMaxW("")
+                  setMinW(0)
+                  setMinH(0)
+                  setMaxW(10000)
+                  setMaxH(10000)
                   handleCClose()
                   }}>关闭</Button>
               <Button onClick={
                 ()=>{
+                  search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", currentPage, size)
                   handleCClose()
                 }}>确认</Button>
             </DialogActions>
@@ -434,222 +495,5 @@ function Result() {
     </div>
     );
 }
-
-
-const itemData = [
-    {
-      img: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e',
-      title: 'Breakfast',
-      author: '@bkristastucchio',
-      rows: 2,
-      cols: 2,
-      featured: true,
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d',
-      title: 'Burger',
-      author: '@rollelflex_graphy726',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1522770179533-24471fcdba45',
-      title: 'Camera',
-      author: '@helloimnik',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1444418776041-9c7e33cc5a9c',
-      title: 'Coffee',
-      author: '@nolanissac',
-      cols: 2,
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1533827432537-70133748f5c8',
-      title: 'Hats',
-      author: '@hjrc33',
-      cols: 2,
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62',
-      title: 'Honey',
-      author: '@arwinneil',
-      rows: 2,
-      cols: 2,
-      featured: true,
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1516802273409-68526ee1bdd6',
-      title: 'Basketball',
-      author: '@tjdragotta',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1518756131217-31eb79b20e8f',
-      title: 'Fern',
-      author: '@katie_wasserman',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1597645587822-e99fa5d45d25',
-      title: 'Mushrooms',
-      author: '@silverdalex',
-      rows: 2,
-      cols: 2,
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1567306301408-9b74779a11af',
-      title: 'Tomato basil',
-      author: '@shelleypauls',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1471357674240-e1a485acb3e1',
-      title: 'Sea star',
-      author: '@peterlaster',
-    },
-    {
-      img: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6',
-      title: 'Bike',
-      author: '@southside_customs',
-      cols: 2,
-    },
-    {
-        img: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e',
-        title: 'Breakfast',
-        author: '@bkristastucchio',
-        rows: 2,
-        cols: 2,
-        featured: true,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d',
-        title: 'Burger',
-        author: '@rollelflex_graphy726',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1522770179533-24471fcdba45',
-        title: 'Camera',
-        author: '@helloimnik',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1444418776041-9c7e33cc5a9c',
-        title: 'Coffee',
-        author: '@nolanissac',
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1533827432537-70133748f5c8',
-        title: 'Hats',
-        author: '@hjrc33',
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62',
-        title: 'Honey',
-        author: '@arwinneil',
-        rows: 2,
-        cols: 2,
-        featured: true,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1516802273409-68526ee1bdd6',
-        title: 'Basketball',
-        author: '@tjdragotta',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1518756131217-31eb79b20e8f',
-        title: 'Fern',
-        author: '@katie_wasserman',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1597645587822-e99fa5d45d25',
-        title: 'Mushrooms',
-        author: '@silverdalex',
-        rows: 2,
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1567306301408-9b74779a11af',
-        title: 'Tomato basil',
-        author: '@shelleypauls',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1471357674240-e1a485acb3e1',
-        title: 'Sea star',
-        author: '@peterlaster',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6',
-        title: 'Bike',
-        author: '@southside_customs',
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e',
-        title: 'Breakfast',
-        author: '@bkristastucchio',
-        rows: 2,
-        cols: 2,
-        featured: true,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d',
-        title: 'Burger',
-        author: '@rollelflex_graphy726',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1522770179533-24471fcdba45',
-        title: 'Camera',
-        author: '@helloimnik',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1444418776041-9c7e33cc5a9c',
-        title: 'Coffee',
-        author: '@nolanissac',
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1533827432537-70133748f5c8',
-        title: 'Hats',
-        author: '@hjrc33',
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62',
-        title: 'Honey',
-        author: '@arwinneil',
-        rows: 2,
-        cols: 2,
-        featured: true,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1516802273409-68526ee1bdd6',
-        title: 'Basketball',
-        author: '@tjdragotta',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1518756131217-31eb79b20e8f',
-        title: 'Fern',
-        author: '@katie_wasserman',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1597645587822-e99fa5d45d25',
-        title: 'Mushrooms',
-        author: '@silverdalex',
-        rows: 2,
-        cols: 2,
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1567306301408-9b74779a11af',
-        title: 'Tomato basil',
-        author: '@shelleypauls',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1471357674240-e1a485acb3e1',
-        title: 'Sea star',
-        author: '@peterlaster',
-      },
-      {
-        img: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6',
-        title: 'Bike',
-        author: '@southside_customs',
-        cols: 2,
-      },
-  ];
 
 export default Result;
