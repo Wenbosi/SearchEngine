@@ -2,7 +2,8 @@ import json
 from ..settings import BASE_DIR
 from django.http import JsonResponse
 import datetime
-
+from PIL import Image
+import numpy as np
 
 def gen_response(code: int, data: str):
     return JsonResponse({
@@ -33,6 +34,24 @@ def correct(key):
                 return label
 
     return ''
+
+def dhash(image):
+    image = np.array(image.resize((9,8)).convert('L'))
+    hash = ''
+    for i in range(8):
+        for j in range(8):
+            if image[i,j] > image[i,j+1]:
+                hash += '1'
+            else:
+                hash += '0'
+    return hash
+
+def dis(d1, d2):
+    res = 0
+    for i in range(len(d1)):
+        if d1[i] != d2[i]:
+            res = res + 1
+    return res
 
 def predict(request):
     """
@@ -67,6 +86,7 @@ def search(request):
     接受POST请求，搜索图片
     @参数：
         key: 文字信息
+        image: 使用以图搜图则输入upload接口上传获得的图片id，否则为空
         min_width: 最小宽度
         max_width: 最大宽度，''代表无限制
         min_height: 最小高度
@@ -87,6 +107,7 @@ def search(request):
     body = json.loads(request.body)
     print(body)
     key = body['key'].upper() if 'key' in body else ''
+    image = body['image'] if 'image' in body else ''
     min_width = body['min_width'] if 'min_width' in body else 0
     max_width = body['max_width'] if 'max_width' in body else ''
     min_height = body['min_height'] if 'min_height' in body else 0
@@ -103,6 +124,13 @@ def search(request):
     datas = {}
     with open(BASE_DIR / 'data' / 'metadata_c.json') as f:
         datas = json.loads(f.read())
+
+    if image != '':
+        image = dhash(Image.open(BASE_DIR / 'upload' / image))
+
+    dhash_data = {}
+    with open(BASE_DIR / 'data' / 'dhash.json') as f:
+        dhash_data = json.loads(f.read())
     
     for id, data in datas.items():
         found_key = False
@@ -121,8 +149,18 @@ def search(request):
             if color[i] == '1' and data[3+i] == 0:
                 color_ok = False
 
-        if found_key and size_ok and color_ok:
-            res.append({"id": id, "labels": data[0], "width": data[1], "height": data[2]})
+        image_ok = True
+        value = 0
+        if image != '':
+            value = dis(dhash_data[id][0], image)
+            if value > 10:
+                image_ok = False
+
+        if found_key and size_ok and color_ok and image_ok:
+            res.append({"id": id, "labels": data[0], "width": data[1], "height": data[2], "value": value})
+    
+    if image != '':
+        res = sorted(res, key=lambda x:x["value"])
 
     if len(res) < page * 36:
         results = res[36 * (page - 1) : ]

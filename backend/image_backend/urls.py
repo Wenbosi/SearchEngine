@@ -21,4 +21,5 @@ urlpatterns = [
     path('search', search.search),
     path('source', source.source),
     path('predict', search.predict),
+    path('upload', source.upload)
 ]
