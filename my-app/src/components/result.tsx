@@ -39,6 +39,12 @@ import Autocomplete from '@mui/material/Autocomplete';
 
 import { Predict } from '../communication/communication';
 
+import { createSpeechlySpeechRecognition } from '@speechly/speech-recognition-polyfill';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+
+const appId = 'c94b5e3c-1314-4718-8927-c6e8de71ca59';
+const SpeechlySpeechRecognition = createSpeechlySpeechRecognition(appId);
+SpeechRecognition.applyPolyfill(SpeechlySpeechRecognition);
 
 function Result() {
     const [keyword, setKeyword] = useState('');
@@ -62,6 +68,7 @@ function Result() {
     const [currentPage, setCurrentPage] = useState(1)
     const [correction, setCorrection] = useState("")
     const [wordList, setWordList] = useState([])
+    const [aopen, setAopen] = useState(false);
 
     useEffect(() => {
       setKeyword(keys[len - 1].substring(8))
@@ -70,6 +77,15 @@ function Result() {
 
     const selecteFileHandler = (event) => {
       setSelectedFile(event.target.files[0]);
+    };
+
+    const handleAClickOpen = () => {
+      setAopen(true);
+      startListening();
+    };
+  
+    const handleAClose = () => {
+      setAopen(false);
     };
 
     const handleClickOpen = () => {
@@ -119,6 +135,13 @@ function Result() {
           (responce) => {}
       )
     }
+
+    const {
+      transcript,
+      listening,
+      resetTranscript,
+    } = useSpeechRecognition();
+    const startListening = () => SpeechRecognition.startListening({ continuous: true });
 
     const search = (key, path, min_width, min_height, max_width, max_height, color, page, size) => {
       const message = {
@@ -188,10 +211,15 @@ function Result() {
                     setKeyword(newInputValue);
                     predict(newInputValue);
                   }}
+                  defaultValue={decodeURIComponent(keys[len - 1].substring(8))}
                   />
                 <Tooltip title="语音输入">
                     <IconButton
                         sx={{ p: '10px' }}
+                        onClick={() => {
+                          resetTranscript()
+                          handleAClickOpen()
+                        }}
                     >
                         <KeyboardVoiceIcon />
                     </IconButton>
@@ -216,7 +244,7 @@ function Result() {
                             setSize(0)
                             search(keyword, "", minW, minH, maxW, maxH, "000000000000", 1, 0)
                             keys = window.location.href.split('/');
-                        }
+                          }
                     }}
                 >
                         <SearchIcon/> 
@@ -520,6 +548,42 @@ function Result() {
                 }}>确认</Button>
             </DialogActions>
         </Dialog>
+
+        <Dialog open={aopen} onClose={handleAClose}>
+        <DialogTitle>语音输入</DialogTitle>
+        <DialogContent>
+        <div>
+          <p>{transcript.toLowerCase()}</p>
+        </div>
+        <Stack spacing={2} direction="row">
+        <Button sx = {{display: 'flex', alignItems: 'center'}} variant="contained" onClick={resetTranscript}>重新输入</Button>
+        </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              resetTranscript()
+              handleAClose()
+              SpeechRecognition.stopListening()
+            }}
+          >
+            关闭
+          </Button>
+          <Button onClick={() => {
+              if(transcript.toLowerCase() !== "") {
+                history.push(`/keyword=${transcript.toLowerCase()}`);
+                setCurrentPage(1)
+                setSize(0)
+                search(transcript.toLowerCase(), "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                keys = window.location.href.split('/');
+                window.location.reload()
+              }
+              resetTranscript()
+              handleAClose()
+              SpeechRecognition.stopListening()
+            }}>确认</Button>
+        </DialogActions>
+      </Dialog>
     </div>
     );
 }

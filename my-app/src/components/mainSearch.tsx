@@ -15,9 +15,16 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
+import Stack from '@mui/material/Stack';
+
+import { createSpeechlySpeechRecognition } from '@speechly/speech-recognition-polyfill';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 import { Predict } from '../communication/communication';
+
+const appId = 'c94b5e3c-1314-4718-8927-c6e8de71ca59';
+const SpeechlySpeechRecognition = createSpeechlySpeechRecognition(appId);
+SpeechRecognition.applyPolyfill(SpeechlySpeechRecognition);
 
 function MainSearch() {
     const history = useHistory();
@@ -27,6 +34,7 @@ function MainSearch() {
     const [aopen, setAopen] = useState(false);
     const [selectedFile, setSelectedFile] = useState('');
     const [wordList, setWordList] = useState([])
+    const [sword, setSword] = useState([])
 
     const handleClickOpen = () => {
       setOpen(true);
@@ -38,6 +46,7 @@ function MainSearch() {
 
     const handleAClickOpen = () => {
       setAopen(true);
+      startListening();
     };
   
     const handleAClose = () => {
@@ -68,8 +77,8 @@ function MainSearch() {
       transcript,
       listening,
       resetTranscript,
-      browserSupportsSpeechRecognition
     } = useSpeechRecognition();
+    const startListening = () => SpeechRecognition.startListening({ continuous: true });
 
     return (
         <div className="App">
@@ -150,22 +159,29 @@ function MainSearch() {
         <DialogTitle>语音输入</DialogTitle>
         <DialogContent>
         <div>
-          <p>Microphone: {listening ? 'on' : 'off'}</p>
-            <button onClick={SpeechRecognition.startListening}>Start</button>
-            <button onClick={SpeechRecognition.stopListening}>Stop</button>
-            <button onClick={resetTranscript}>Reset</button>
-            <p>{transcript}</p>
+          <p>{transcript.toLowerCase()}</p>
         </div>
+        <Stack spacing={2} direction="row">
+        <Button sx = {{display: 'flex', alignItems: 'center'}} variant="contained" onClick={resetTranscript}>重新输入</Button>
+        </Stack>
         </DialogContent>
         <DialogActions>
           <Button 
-          onClick={() => {
+            onClick={() => {
               resetTranscript()
               handleAClose()
+              SpeechRecognition.stopListening()
             }}
-            >
-              关闭</Button>
-          <Button onClick={handleAClose}>确认</Button>
+          >
+            关闭
+          </Button>
+          <Button onClick={() => {
+              if(transcript.toLowerCase() !== "")
+                history.push(`/keyword=${transcript.toLowerCase()}`);
+              resetTranscript()
+              handleAClose()
+              SpeechRecognition.stopListening()
+            }}>确认</Button>
         </DialogActions>
       </Dialog>
 
