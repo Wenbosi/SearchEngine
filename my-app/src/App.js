@@ -6,12 +6,12 @@ import MainSearch from './components/mainSearch.tsx'
 
 
 function App() {
-  return (   
+  return (
     <Router>
       <Route exact path="/" component={MainSearch} /> 
       <Route exact path="/keyword=:name" component={Result} />
+      <Route exact path="/keyword=" component={Result} />
     </Router>
-    
   );
 }
 

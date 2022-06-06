@@ -9,6 +9,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import Tooltip from '@mui/material/Tooltip';
 import Pagination from '@mui/material/Pagination';
+import cookies from 'react-cookies';
 
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -37,7 +38,7 @@ import Typography from '@mui/material/Typography';
 import { Search } from '../communication/communication';
 import Autocomplete from '@mui/material/Autocomplete';
 
-import { Predict } from '../communication/communication';
+import { Predict, Upload } from '../communication/communication';
 
 import { createSpeechlySpeechRecognition } from '@speechly/speech-recognition-polyfill';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
@@ -69,9 +70,15 @@ function Result() {
     const [correction, setCorrection] = useState("")
     const [wordList, setWordList] = useState([])
     const [aopen, setAopen] = useState(false);
+    const [image, setImage] = useState('')
 
     useEffect(() => {
       setKeyword(keys[len - 1].substring(8))
+      if(keys[len - 1].substring(8) === '') {
+        console.log("empty")
+        console.log(cookies.load('id'))
+        setImage(cookies.load('id'))
+      }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
@@ -106,7 +113,7 @@ function Result() {
 
     const handleChangeColor = (event) => {
       setColor(event.target.value);
-      search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, event.target.value, currentPage, size)
+      search(keys[len - 1].substring(8), image, minW, minH, maxW, maxH, event.target.value, currentPage, size)
     };
 
     const handleChangeSize = (event) => {
@@ -116,7 +123,7 @@ function Result() {
       setMaxW(10000)
       setMaxH(10000)
       if(event.target.value === 0 || event.target.value === 1 || event.target.value === 2 || event.target.value === 3) {
-        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, color, currentPage, event.target.value)
+        search(keys[len - 1].substring(8), image, minW, minH, maxW, maxH, color, currentPage, event.target.value)
       }
       else if(event.target.value === 5)
         handleCClickOpen();
@@ -144,10 +151,10 @@ function Result() {
     } = useSpeechRecognition();
     const startListening = () => SpeechRecognition.startListening({ continuous: true });
 
-    const search = (key, path, min_width, min_height, max_width, max_height, color, page, size) => {
+    const search = (key, i, min_width, min_height, max_width, max_height, color, page, size) => {
       const message = {
         key : key,
-        path : path,
+        image : i,
         min_width : min_width,
         min_height : min_height,
         max_width : max_width,
@@ -178,10 +185,36 @@ function Result() {
 
 
     useEffect(() => {
+      if(keys[len - 1].substring(8) !== "")
         search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, 0, 1, 0)
+      else
+        search(keys[len - 1].substring(8), cookies.load('id'), minW, minH, maxW, maxH, 0, 1, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
+    const uploadHandler = () => {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      Upload(formData)
+      .then(
+        (id) => {
+          console.log(id)
+          cookies.save('id', id, {
+            expires: new Date(
+                new Date().getTime() + 3600 * 4000
+            )
+          });
+          history.push(`/keyword=`)
+          setSelectedFile(null)
+          setCurrentPage(1)
+          search(keyword, id, minW, minH, maxW, maxH, color, 1, size)
+          keys = window.location.href.split('/');
+        }
+      )
+      .catch(
+        (responce) => {}
+      )
+    }
 
     return (
         <div className="App1">
@@ -242,7 +275,7 @@ function Result() {
                           if(keyword !== "") {
                             history.push(`/keyword=${keyword}`);
                             setCurrentPage(1)
-                            search(keyword, "", minW, minH, maxW, maxH, color, 1, size)
+                            search(keyword, image, minW, minH, maxW, maxH, color, 1, size)
                             keys = window.location.href.split('/');
                           }
                     }}
@@ -261,7 +294,7 @@ function Result() {
             gutterBottom component="div" 
             sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
         >
-          Sansi为您找到相关结果共{count}个，耗时约{time}毫秒
+          Sansi为您找到相关结果共{count}个，耗时约{time}秒
         </Typography>
       </FormControl>
       <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginRight: 6, marginTop: 3}}>
@@ -407,7 +440,7 @@ function Result() {
                   ()=>{
                     history.push(`/keyword=${correction}`);
                     setCurrentPage(1)
-                    search(correction, "", minW, minH, maxW, maxH, color, 1, size)
+                    search(correction, image, minW, minH, maxW, maxH, color, 1, size)
                     window.location.reload()
                   }
                 }
@@ -454,7 +487,7 @@ function Result() {
                 onChange={
                     (event, value) => {
                       setCurrentPage(value)
-                      search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", value, size)
+                      search(keys[len - 1].substring(8), image, minW, minH, maxW, maxH, color, value, size)
                     }
                 }
                 count={pages} 
@@ -463,16 +496,28 @@ function Result() {
                 showFirstButton 
                 showLastButton/>
         </div>
+
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>以图搜图</DialogTitle>
-            <DialogContent>
-              <input style={{display:'block', alignItems: 'center'}} type="file" accept="image/*" onChange={selecteFileHandler}/>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose}>关闭</Button>
-              <Button onClick={handleClose}>确认</Button>
-            </DialogActions>
-        </Dialog>
+        <DialogTitle>以图搜图</DialogTitle>
+        <DialogContent>
+        <input style={{display:'block', alignItems: 'center'}} type="file" accept="image/*" onChange={selecteFileHandler}/>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={
+            () => {
+            handleClose()
+            setSelectedFile(null)
+            }}>
+              关闭</Button>
+          <Button onClick={
+            () => {
+              handleClose()
+              if(selectedFile !== null)
+                uploadHandler()
+          }}
+          >确认</Button>
+        </DialogActions>
+      </Dialog>
 
         <Dialog open={copen} onClose={handleCClose}>
           <DialogTitle>自定义图片尺寸筛选</DialogTitle>
@@ -551,7 +596,7 @@ function Result() {
                   }}>关闭</Button>
               <Button onClick={
                 ()=>{
-                  search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, color, currentPage, size)
+                  search(keys[len - 1].substring(8), image, minW, minH, maxW, maxH, color, currentPage, size)
                   handleCClose()
                 }}>确认</Button>
             </DialogActions>

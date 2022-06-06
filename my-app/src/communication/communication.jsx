@@ -2,6 +2,7 @@ import axios from 'axios'
 
 const SEARCH_URL = '/search';
 const PREDICT_URL = '/predict';
+const UPLOAD_URL = '/upload'
 
 export const Search = (message) => {
     return new Promise((resolve, reject) => {
@@ -55,6 +56,25 @@ export const Predict = (message) => {
                     list.push(item)
                 }
                 resolve(list)
+            }
+        )
+        .catch(
+            (error) => {
+                reject(error.response)
+            }
+        )
+    });
+}
+
+
+export const Upload = (image) => {
+    return new Promise((resolve, reject) => {
+        axios
+        .post(UPLOAD_URL, image)
+        .then(
+            (response) => {
+                const id = response.data.data.id;
+                resolve(id)
             }
         )
         .catch(

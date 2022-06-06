@@ -16,11 +16,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import Stack from '@mui/material/Stack';
+import cookies from 'react-cookies';
 
 import { createSpeechlySpeechRecognition } from '@speechly/speech-recognition-polyfill';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
-import { Predict } from '../communication/communication';
+import { Predict, Upload } from '../communication/communication';
 
 const appId = 'c94b5e3c-1314-4718-8927-c6e8de71ca59';
 const SpeechlySpeechRecognition = createSpeechlySpeechRecognition(appId);
@@ -29,12 +30,10 @@ SpeechRecognition.applyPolyfill(SpeechlySpeechRecognition);
 function MainSearch() {
     const history = useHistory();
     const [keyword, setKeyword] = useState('');
-
     const [open, setOpen] = useState(false);
     const [aopen, setAopen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState('');
+    const [selectedFile, setSelectedFile] = useState(null);
     const [wordList, setWordList] = useState([])
-    const [sword, setSword] = useState([])
 
     const handleClickOpen = () => {
       setOpen(true);
@@ -72,7 +71,27 @@ function MainSearch() {
       )
     }
 
-    
+    const uploadHandler = () => {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      Upload(formData)
+      .then(
+        (id) => {
+          console.log(id)
+          cookies.save('id', id, {
+            expires: new Date(
+                new Date().getTime() + 3600 * 4000
+            )
+          });
+          history.push(`/keyword=`)
+          setSelectedFile(null)
+        }
+      )
+      .catch(
+        (responce) => {}
+      )
+    }
+
     const {
       transcript,
       listening,
@@ -150,8 +169,19 @@ function MainSearch() {
         <input style={{display:'block', alignItems: 'center'}} type="file" accept="image/*" onChange={selecteFileHandler}/>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>关闭</Button>
-          <Button onClick={handleClose}>确认</Button>
+          <Button onClick={
+            () => {
+            handleClose()
+            setSelectedFile(null)
+            }}>
+              关闭</Button>
+          <Button onClick={
+            () => {
+              handleClose()
+              if(selectedFile !== null)
+                uploadHandler()
+          }}
+          >确认</Button>
         </DialogActions>
       </Dialog>
 
