@@ -1,7 +1,6 @@
 import axios from 'axios'
 
 const SEARCH_URL = '/search';
-const SOURCE_URL = '/source';
 const PREDICT_URL = '/predict';
 
 export const Search = (message) => {
@@ -31,6 +30,31 @@ export const Search = (message) => {
                 r['time'] = data.time
                 r['correction'] = data.correction
                 resolve(r)
+            }
+        )
+        .catch(
+            (error) => {
+                reject(error.response)
+            }
+        )
+    });
+}
+
+export const Predict = (message) => {
+    return new Promise((resolve, reject) => {
+        axios
+        .post(PREDICT_URL, JSON.stringify(message))
+        .then(
+            (response) => {
+                const data = response.data.data.predictions
+                console.log(data)
+                let length = (data.length > 6) ? 6 : data.length;
+                let list = []
+                for(let i = 0; i < length; i++) {
+                    const item = { word : data[i]}
+                    list.push(item)
+                }
+                resolve(list)
             }
         )
         .catch(

@@ -3,7 +3,6 @@ import tsinghua from '../images/tsinghua.png'
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Paper from '@mui/material/Paper';
-import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
@@ -33,11 +32,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import CircleIcon from '@mui/icons-material/Circle';
 import { red, orange, yellow, green, grey, blue, brown, cyan, purple } from '@mui/material/colors';
-
 import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
-
 import { Search } from '../communication/communication';
+import Autocomplete from '@mui/material/Autocomplete';
+
+import { Predict } from '../communication/communication';
 
 
 function Result() {
@@ -61,6 +61,7 @@ function Result() {
     const [time, setTime] = useState(0.0)
     const [currentPage, setCurrentPage] = useState(1)
     const [correction, setCorrection] = useState("")
+    const [wordList, setWordList] = useState([])
 
     useEffect(() => {
       setKeyword(keys[len - 1].substring(8))
@@ -102,7 +103,22 @@ function Result() {
       }
       else if(event.target.value === 5)
         handleCClickOpen();
-  };
+    };
+
+    const predict = (key) => {
+      const message = {
+        input : key,
+      }
+      Predict(message)
+      .then(
+          (list) => {
+            setWordList(list)
+          }
+      )
+      .catch(
+          (responce) => {}
+      )
+    }
 
     const search = (key, path, min_width, min_height, max_width, max_height, color, page, size) => {
       const message = {
@@ -151,15 +167,28 @@ function Result() {
                     onClick={() => {
                       history.push(`/`);
                     }}/>
-                  <Paper component="form" elevation={4} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 600 }}>
-                <InputBase 
-                    sx={{ ml: 1, flex: 1 }} 
-                    defaultValue={decodeURIComponent(keys[len - 1].substring(8))}
-                    onChange={(event) => {
-                        setKeyword(event.target.value);
-                    }}
-                />
-
+                  <Paper component="form" elevation={0} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 600 }}>
+                <Autocomplete
+                  freeSolo
+                  id="free-solo-2-demo"
+                  disableClearable
+                  sx={{ ml: 1, flex: 1}}
+                  options={wordList.map((option) => option.word)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="在Sansi上搜索"
+                      InputProps={{
+                        ...params.InputProps,
+                        type: 'search',
+                      }}
+                    />
+                  )}
+                  onInputChange={(event, newInputValue) => {
+                    setKeyword(newInputValue);
+                    predict(newInputValue);
+                  }}
+                  />
                 <Tooltip title="语音输入">
                     <IconButton
                         sx={{ p: '10px' }}
@@ -204,7 +233,7 @@ function Result() {
             gutterBottom component="div" 
             sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
         >
-          谷歌为您找到相关结果共{count}个，耗时约{time}毫秒
+          Sansi为您找到相关结果共{count}个，耗时约{time}毫秒
         </Typography>
       </FormControl>
       <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginRight: 6, marginTop: 3}}>
@@ -352,16 +381,15 @@ function Result() {
 
         <div className='photo'>
         <Box sx={{ width: 1600}}>
-        <ImageList  cols={6}>
+        <ImageList cols={6}>
         {itemData.map((item) => (
-            <ImageListItem key={item.img}>
+            <ImageListItem
+              sx = {{
+              }}>
                 <img
-                    // src={`${item.img}?w=242&fit=crop&auto=format`}
-                    // srcSet={`${item.img}?w=242&fit=crop&auto=format&dpr=2 2x`}
                     src={`${item.img}`}
                     srcSet={`${item.img}`}
                     alt={item.label}
-                    loading="lazy"
                 />
             <ImageListItemBar
                 title={item.label}

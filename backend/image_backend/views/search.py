@@ -43,7 +43,9 @@ def predict(request):
     @返回：
         predictions: 预测词list
     """
-    input = str(request.GET['input']).upper()
+    body = json.loads(request.body)
+    print(body)
+    input = body['input'].upper()
 
     labels = []
     with open(BASE_DIR / 'data' / 'sorted_labels.json') as f:
@@ -55,7 +57,8 @@ def predict(request):
             predictions.append(label)
             if len(predictions) > 10:
                 break
-    
+    if input == "":
+        predictions = []
     data = { "predictions": predictions }
     return gen_response(200, data)
 
