@@ -31,7 +31,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import CircleIcon from '@mui/icons-material/Circle';
-import { red, orange, yellow, green, grey, blue, brown, cyan, purple } from '@mui/material/colors';
+import { red, orange, yellow, green, grey, blue, brown, cyan, purple, pink } from '@mui/material/colors';
 import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 import { Search } from '../communication/communication';
@@ -51,7 +51,7 @@ function Result() {
     const history = useHistory();
     let keys = window.location.href.split('/');
     const len = keys.length;
-    const [color, setColor] = useState(1);
+    const [color, setColor] = useState(0);
     const [size, setSize] = useState(0);
     const [copen, setCopen] = useState(false);
     const [open, setOpen] = useState(false);
@@ -106,6 +106,7 @@ function Result() {
 
     const handleChangeColor = (event) => {
       setColor(event.target.value);
+      search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, event.target.value, currentPage, size)
     };
 
     const handleChangeSize = (event) => {
@@ -115,7 +116,7 @@ function Result() {
       setMaxW(10000)
       setMaxH(10000)
       if(event.target.value === 0 || event.target.value === 1 || event.target.value === 2 || event.target.value === 3) {
-        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", currentPage, event.target.value)
+        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, color, currentPage, event.target.value)
       }
       else if(event.target.value === 5)
         handleCClickOpen();
@@ -177,7 +178,7 @@ function Result() {
 
 
     useEffect(() => {
-        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", 1, -1)
+        search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, 0, 1, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
@@ -241,8 +242,7 @@ function Result() {
                           if(keyword !== "") {
                             history.push(`/keyword=${keyword}`);
                             setCurrentPage(1)
-                            setSize(0)
-                            search(keyword, "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                            search(keyword, "", minW, minH, maxW, maxH, color, 1, size)
                             keys = window.location.href.split('/');
                           }
                     }}
@@ -292,16 +292,16 @@ function Result() {
           label="图片颜色"
           onChange={handleChangeColor}
         >
-          <MenuItem value={1}>
+          <MenuItem value={0}>
               全部
           </MenuItem>
-          <MenuItem value={2}>
+          <MenuItem value={1}>
               彩色
           </MenuItem>
-          <MenuItem value={3}>
+          <MenuItem value={2}>
               黑白
           </MenuItem>
-          <MenuItem value={4}>
+          <MenuItem value={3}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -310,7 +310,7 @@ function Result() {
               }}/>
             红
           </MenuItem>
-          <MenuItem value={5}>
+          <MenuItem value={4}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -319,7 +319,7 @@ function Result() {
               }}/>
             橙
           </MenuItem>
-          <MenuItem value={6}>
+          <MenuItem value={5}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -328,16 +328,16 @@ function Result() {
               }}/>
             黄
           </MenuItem>
-          <MenuItem value={7}>
+          <MenuItem value={6}>
             <CircleIcon
               sx={{
                 marginRight: 1,
                 maxHeight: 20,
                 color:green[500]
               }}/>
-            红
+            绿
           </MenuItem>
-          <MenuItem value={8}>
+          <MenuItem value={7}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -346,7 +346,7 @@ function Result() {
               }}/>
             青
           </MenuItem>
-          <MenuItem value={9}>
+          <MenuItem value={8}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -355,7 +355,7 @@ function Result() {
               }}/>
             蓝
           </MenuItem>
-          <MenuItem value={10}>
+          <MenuItem value={9}>
             <CircleIcon
               sx={{
                 marginRight: 1,
@@ -363,6 +363,15 @@ function Result() {
                 color:purple[500]
               }}/>
             紫
+          </MenuItem>
+          <MenuItem value={10}>
+            <CircleIcon
+              sx={{
+                marginRight: 1,
+                maxHeight: 20,
+                color:pink[500]
+              }}/>
+            粉
           </MenuItem>
           <MenuItem value={11}>
             <CircleIcon
@@ -398,8 +407,7 @@ function Result() {
                   ()=>{
                     history.push(`/keyword=${correction}`);
                     setCurrentPage(1)
-                    setSize(0)
-                    search(correction, "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                    search(correction, "", minW, minH, maxW, maxH, color, 1, size)
                     window.location.reload()
                   }
                 }
@@ -543,7 +551,7 @@ function Result() {
                   }}>关闭</Button>
               <Button onClick={
                 ()=>{
-                  search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, "000000000000", currentPage, size)
+                  search(keys[len - 1].substring(8), "", minW, minH, maxW, maxH, color, currentPage, size)
                   handleCClose()
                 }}>确认</Button>
             </DialogActions>
@@ -573,8 +581,7 @@ function Result() {
               if(transcript.toLowerCase() !== "") {
                 history.push(`/keyword=${transcript.toLowerCase()}`);
                 setCurrentPage(1)
-                setSize(0)
-                search(transcript.toLowerCase(), "", minW, minH, maxW, maxH, "000000000000", 1, 0)
+                search(transcript.toLowerCase(), "", minW, minH, maxW, maxH, color, 1, size)
                 keys = window.location.href.split('/');
                 window.location.reload()
               }
