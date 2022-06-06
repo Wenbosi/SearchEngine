@@ -6,6 +6,42 @@ from django.http import JsonResponse
 import datetime
 from PIL import Image
 import numpy as np
+import time
+import json
+import requests
+import hashlib
+import uuid
+
+
+def isChinese(word):
+    for ch in word:
+        if '\u4e00' <= ch <= '\u9fff':
+            return True
+    return False
+
+
+def translate(word):
+    youdao_url = 'https://openapi.youdao.com/api'
+    translate_text = word
+    time_curtime = int(time.time())
+    app_id = "02e7f6953a229282"
+    uu_id = uuid.uuid4()
+    app_key = "p20UHwhDClpIaHItd9rqlmvFtp05w8Je"
+    sign = hashlib.sha256((app_id + translate_text + str(uu_id) + str(time_curtime) + app_key).encode('utf-8')).hexdigest()
+    data = {
+        'q' : translate_text,
+        'from' : "zh-CHS",
+        'to' : "en",
+        'appKey' : app_id,
+        'salt' : uu_id,
+        'sign' : sign,
+        'signType' : "v3",
+        'curtime' : time_curtime,
+    }
+
+    r = requests.get(youdao_url, params = data).json()
+    return r["translation"][0]
+
 
 def gen_response(code: int, data: str):
     return JsonResponse({
@@ -37,6 +73,7 @@ def correct(key):
 
     return ''
 
+
 def dhash(image):
     image = np.array(image.resize((9,8)).convert('L'))
     hash = ''
@@ -48,12 +85,14 @@ def dhash(image):
                 hash += '0'
     return hash
 
+
 def dis(d1, d2):
     res = 0
     for i in range(len(d1)):
         if d1[i] != d2[i]:
             res = res + 1
     return res
+
 
 def predict(request):
     """
@@ -82,6 +121,7 @@ def predict(request):
         predictions = []
     data = { "predictions": predictions }
     return gen_response(200, data)
+
 
 def search(request):
     """
@@ -118,9 +158,12 @@ def search(request):
     size = body['size']
     page = body['page'] if 'page' in body else ''
 
-    correction = correct(key)
-    if correction != '':
-        key = correction.upper()
+    if key != "" and isChinese(key[0]) == False:
+        correction = correct(key)
+    else:
+        correction = ''
+    # if correction != '':
+    #    key = correction.upper()
 
     res = []
 
@@ -134,6 +177,10 @@ def search(request):
     dhash_data = {}
     with open(BASE_DIR / 'data' / 'dhash.json') as f:
         dhash_data = json.loads(f.read())
+    
+    if key != "" and isChinese(key[0]) == True:
+        key = translate(key).upper()
+        print(key)
     
     for id, data in datas.items():
         l = ""
