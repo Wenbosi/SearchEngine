@@ -136,10 +136,12 @@ def search(request):
         dhash_data = json.loads(f.read())
     
     for id, data in datas.items():
+        l = ""
         found_key = False
         for label in data[0]:
             if key in label.upper():
                 found_key = True
+                l = label
         
         if size == 0: # 全部
             size_ok = True
@@ -215,7 +217,7 @@ def search(request):
                 image_ok = False
 
         if found_key and size_ok and color_ok and image_ok:
-            res.append({"id": id, "labels": data[0], "width": data[1], "height": data[2], "value": value})
+            res.append({"id": id, "label": l, "width": data[1], "height": data[2], "value": value})
     
     if image != '':
         res = sorted(res, key=lambda x:x["value"])

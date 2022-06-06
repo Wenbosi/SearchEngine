@@ -18,8 +18,7 @@ export const Search = (message) => {
                 for(let i = 0; i < length; i++) {
                     const item = {
                         img : "http://127.0.0.1:8000/source?id=" + dataList[i].id,
-                        // labels : dataList[i].labels,
-                        label : "图片",
+                        label : dataList[i].label,
                         width : dataList[i].width,
                         height : dataList[i].height,
                     }
