@@ -1,4 +1,6 @@
 import json
+
+from cv2 import boundingRect
 from ..settings import BASE_DIR
 from django.http import JsonResponse
 import datetime
@@ -91,7 +93,8 @@ def search(request):
     max_width = body['max_width'] if 'max_width' in body else ''
     min_height = body['min_height'] if 'min_height' in body else 0
     max_height = body['max_height'] if 'max_height' in body else ''
-    color = body['color'] if 'color' in body else '0' * 12
+    color = body['color']
+    size = body['size']
     page = body['page'] if 'page' in body else ''
 
     correction = correct(key)
@@ -109,17 +112,72 @@ def search(request):
         for label in data[0]:
             if key in label.upper():
                 found_key = True
-
-        size_ok = data[1] >= min_width and data[2] >= min_height
-        if max_width != '' and data[1] > max_width:
-            size_ok = False
-        if max_height != '' and data[2] > max_height:
-            size_ok = False
-
+        
+        if size == 0: # 全部
+            size_ok = True
+        elif size == 1: # 小
+            if data[1] * data[2] < 720 * 720:
+                size_ok = True
+            else:
+                size_ok = False
+        elif size == 2: # 中
+            if data[1] * data[2] >= 720 * 720 and data[1] * data[2] < 1080 * 720:
+                size_ok = True
+            else:
+                size_ok = False
+        elif size == 3: # 大
+            if data[1] * data[2] >= 1080 * 720:
+                size_ok = True
+            else:
+                size_ok = False
+        elif size == 5: # 自定义
+            size_ok = (data[1] >= min_width and data[2] >= min_height)
+            if max_width != '' and data[1] > max_width:
+                size_ok = False
+            if max_height != '' and data[2] > max_height:
+                size_ok = False
+        
         color_ok = True
-        for i in range(12):
-            if color[i] == '1' and data[3+i] == 0:
+        if color == 0 : # 全部
+            color_ok = True
+        elif color == 1 : # 彩色
+            color_ok = True
+        elif color == 2 : # 黑白
+            color_ok = True
+        elif color == 3 : # 红
+            if data[3] == 0:
                 color_ok = False
+        elif color == 4 : # 橙
+            if data[4] == 0:
+                color_ok = False
+        elif color == 5 : # 黄
+            if data[5] == 0:
+                color_ok = False
+        elif color == 6 : # 绿
+            if data[6] == 0:
+                color_ok = False
+        elif color == 7 : # 青
+            if data[7] == 0:
+                color_ok = False
+        elif color == 8 : # 蓝
+            if data[8] == 0:
+                color_ok = False
+        elif color == 9 : # 紫
+            if data[9] == 0:
+                color_ok = False
+        elif color == 10 : # 粉
+            if data[10] == 0:
+                color_ok = False
+        elif color == 11 : # 棕
+            if data[11] == 0:
+                color_ok = False
+        elif color == 12 : # 灰
+            if data[12] == 0:
+                color_ok = False
+        
+        # for i in range(12):
+        #    if color[i] == '1' and data[3+i] == 0:
+        #        color_ok = False
 
         if found_key and size_ok and color_ok:
             res.append({"id": id, "labels": data[0], "width": data[1], "height": data[2]})
