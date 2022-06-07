@@ -253,6 +253,7 @@ def search(request):
 
         if key == "":
             found_key = True
+            best_label = data[0][0]
         
         if size == 0: # 全部
             size_ok = True
