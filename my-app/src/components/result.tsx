@@ -293,13 +293,22 @@ function Result() {
           <div>
             <Divider variant='middle'></Divider>
       <FormControl>
+        {time !== 0.0 &&
         <Typography 
             variant="subtitle1" 
             gutterBottom component="div" 
             sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
         >
           Sansi为您找到相关结果共{count}个，耗时约{time}秒
-        </Typography>
+        </Typography>}
+        {time === 0.0 &&
+        <Typography 
+            variant="subtitle1" 
+            gutterBottom component="div" 
+            sx={{ m: 5, marginLeft: 20, marginRight: 15, color:grey[600]}}   
+        >
+          搜索中, 请稍等...
+        </Typography>}
       </FormControl>
       <FormControl sx={{ m: 1, minWidth: 120, minHeight:60, marginRight: 6, marginTop: 3}}>
         <InputLabel>图片尺寸</InputLabel>
