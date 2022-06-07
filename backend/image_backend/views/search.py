@@ -1,6 +1,6 @@
 import json
+import re
 
-from cv2 import boundingRect
 from ..settings import BASE_DIR
 from django.http import JsonResponse
 import datetime
@@ -11,6 +11,8 @@ import json
 import requests
 import hashlib
 import uuid
+from spellchecker import SpellChecker
+import difflib
 
 
 def isChinese(word):
@@ -52,25 +54,18 @@ def gen_response(code: int, data: str):
 
 def correct(key):
     """
-    若无法找到key对应的label，猜测输入错误，返回可能正确的输入（否则为''）
+    拼写纠错
     """
-    labels = []
-    with open(BASE_DIR / 'data' / 'sorted_labels.json') as f:
-        labels = json.loads(f.read())
-    
-    for label in labels:
-        if key in label.upper():
-            return ''
-    
-    for label in labels:
-        for i in range(len(key)):
-            for c in range(26):
-                if key[:i] + chr(ord('A')+c) + key[i+1:] in label.upper():
-                    return label
-        for i in range(len(key)-1):
-            if key[:i] + key[i+1] + key[i] + key[i+2:] in label.upper():
-                return label
-
+    spell = SpellChecker()
+    found = False
+    res = ''
+    for word in key.split(' '):
+        correction = spell.correction(word)
+        if word != correction:
+            found = True
+        res = correction if res == '' else res + ' ' + correction
+    if found:
+        return res
     return ''
 
 
@@ -93,6 +88,20 @@ def dis(d1, d2):
             res = res + 1
     return res
 
+def score(key, label):
+    key_words = key.split(' ')
+    label_words = label.split(' ')
+    max_score = 0
+    for start in range(len(key_words)):
+        score = 0
+        for i in range(min(len(key_words) - start, len(label_words))):
+            s = difflib.SequenceMatcher(None, key_words[start+i], label_words[i]).quick_ratio()
+            if s > 0.75:
+                score = score + s
+        if score > max_score:
+            max_score = score
+    max_score = max_score / len(label_words)
+    return max_score
 
 def predict(request):
     """
@@ -148,7 +157,7 @@ def search(request):
 
     body = json.loads(request.body)
     print(body)
-    key = body['key'].upper() if 'key' in body else ''
+    key = body['key'] if 'key' in body else ''
     image = body['image'] if 'image' in body else ''
     min_width = body['min_width'] if 'min_width' in body else 0
     max_width = body['max_width'] if 'max_width' in body else ''
@@ -158,12 +167,15 @@ def search(request):
     size = body['size']
     page = body['page'] if 'page' in body else ''
 
-    if key != "" and isChinese(key[0]) == False:
-        correction = correct(key)
-    else:
+    if key != '' and isChinese(key[0]):
+        key = translate(key)
+        print(key)
         correction = ''
-    # if correction != '':
-    #    key = correction.upper()
+    else:
+        correction = correct(key)
+        if correction != '':
+            key = correction
+    key = key.upper()
 
     res = []
 
@@ -177,18 +189,30 @@ def search(request):
     dhash_data = {}
     with open(BASE_DIR / 'data' / 'dhash.json') as f:
         dhash_data = json.loads(f.read())
-    
-    if key != "" and isChinese(key[0]) == True:
-        key = translate(key).upper()
-        print(key)
+
+    mono_data = {}
+    with open(BASE_DIR / 'data' / 'metadata_m.json') as f:
+        mono_data = json.loads(f.read())
+
+    labels = []
+    with open(BASE_DIR / 'data' / 'sorted_labels.json') as f:
+        labels = json.loads(f.read())
+    labels_score = {}
+    for label in labels:
+        labels_score[label] = score(key, label.upper())
     
     for id, data in datas.items():
-        l = ""
+        best_label = ""
         found_key = False
+        key_score = 0
+        max_score = 0
         for label in data[0]:
-            if key in label.upper():
+            s = labels_score[label]
+            if s > max_score:
+                max_score = s
+                best_label = label
                 found_key = True
-                l = label
+            key_score = key_score + s
         
         if size == 0: # 全部
             size_ok = True
@@ -218,9 +242,11 @@ def search(request):
         if color == 0 : # 全部
             color_ok = True
         elif color == 1 : # 彩色
-            color_ok = True
+            if mono_data[id] == '1':
+                color_ok = False
         elif color == 2 : # 黑白
-            color_ok = True
+            if mono_data[id] == '0':
+                color_ok = False
         elif color == 3 : # 红
             if data[3] == 0:
                 color_ok = False
@@ -264,10 +290,13 @@ def search(request):
                 image_ok = False
 
         if found_key and size_ok and color_ok and image_ok:
-            res.append({"id": id, "label": l, "width": data[1], "height": data[2], "value": value})
+            res.append({"id": id, "label": best_label, "width": data[1], "height": data[2], "value": value, "score": key_score})
     
     if image != '':
         res = sorted(res, key=lambda x:x["value"])
+
+    if key != '':
+        res = sorted(res, key=lambda x:x["score"], reverse=True)
 
     if len(res) < page * 36:
         results = res[36 * (page - 1) : ]
