@@ -16,8 +16,8 @@ from spellchecker import SpellChecker
 import difflib
 import math
 
-from gensim.models import KeyedVectors
-vectors = KeyedVectors.load('data/vectors.bin')
+#from gensim.models import KeyedVectors
+#vectors = KeyedVectors.load('data/vectors.bin')
 
 
 def isChinese(word):
@@ -118,7 +118,7 @@ def score(key, label):
                 score = score + s
         if score > max_score:
             max_score = score
-    max_score = max_score / len(label_words)
+    max_score = max_score / len(label_words) * ((len(label_words)-1) / 2.0 + 1)
     return max_score
     """score = 0
     for i in range(len(key_words)):
@@ -222,22 +222,21 @@ def search(request):
 
     
     key = key.replace("%20", " ")
-    if key != '' and isChinese(key[0]):
-        key = translate(key)
-        key = key.upper()
-        correction = ''
-    else:
-        key = key.upper()
-        correction = correct(key, labels)
+    correction = ''
+    if key != '':
+        if isChinese(key[0]):
+            key = translate(key)
+        else:
+            key = key.upper()
+            correction = correct(key, labels)
         # if correction != '':
         #    key = correction
     
-
+    key = key.upper()
     labels_score = {}
     for label in labels:
         labels_score[label] = score(key, label.upper())
     
-
     for id, data in datas.items():
         best_label = ""
         found_key = False
@@ -249,7 +248,8 @@ def search(request):
                 max_score = s
                 best_label = label
                 found_key = True
-            key_score = key_score + s
+                #key_score = key_score + s
+        key_score = max_score
         
         if size == 0: # 全部
             size_ok = True
@@ -324,7 +324,7 @@ def search(request):
             if value > 10:
                 image_ok = False
 
-        if found_key and size_ok and color_ok and image_ok:
+        if (key == '' or found_key) and size_ok and color_ok and image_ok:
             res.append({"id": id, "label": best_label, "width": data[1], "height": data[2], "value": value, "score": key_score})
     
     if image != '':
