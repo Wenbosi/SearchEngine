@@ -14,6 +14,9 @@ import uuid
 from spellchecker import SpellChecker
 import difflib
 
+from gensim.models import KeyedVectors
+vectors = KeyedVectors.load('data/vectors.bin')
+
 
 def isChinese(word):
     for ch in word:
@@ -52,7 +55,20 @@ def gen_response(code: int, data: str):
     }, status=code)
 
 
-def correct(key):
+def max_sim(word, labels):
+    maxv = -1
+    label = ""
+    for item in labels:
+        s = difflib.SequenceMatcher(None, word, item.upper()).quick_ratio()
+        print(word, item.upper(), s)
+        if s > maxv:
+            maxv = s
+            label = item
+    print(word, label, maxv)
+    return label
+
+
+def correct(key, labels):
     """
     拼写纠错
     """
@@ -63,6 +79,7 @@ def correct(key):
         correction = spell.correction(word)
         if word != correction:
             found = True
+            correction = max_sim(word, labels)
         res = correction if res == '' else res + ' ' + correction
     if found:
         return res
@@ -88,6 +105,7 @@ def dis(d1, d2):
             res = res + 1
     return res
 
+
 def score(key, label):
     key_words = key.split(' ')
     label_words = label.split(' ')
@@ -102,6 +120,7 @@ def score(key, label):
             max_score = score
     max_score = max_score / len(label_words)
     return max_score
+
 
 def predict(request):
     """
@@ -124,7 +143,7 @@ def predict(request):
     for label in labels:
         if label.upper().startswith(input):
             predictions.append(label)
-            if len(predictions) > 10:
+            if len(predictions) > 6:
                 break
     if input == "":
         predictions = []
@@ -167,16 +186,6 @@ def search(request):
     size = body['size']
     page = body['page'] if 'page' in body else ''
 
-    if key != '' and isChinese(key[0]):
-        key = translate(key)
-        print(key)
-        correction = ''
-    else:
-        correction = correct(key)
-        if correction != '':
-            key = correction
-    key = key.upper()
-
     res = []
 
     datas = {}
@@ -197,10 +206,25 @@ def search(request):
     labels = []
     with open(BASE_DIR / 'data' / 'sorted_labels.json') as f:
         labels = json.loads(f.read())
+
+    
+    key = key.replace("%20", " ")
+    if key != '' and isChinese(key[0]):
+        key = translate(key)
+        key = key.upper()
+        correction = ''
+    else:
+        key = key.upper()
+        correction = correct(key, labels)
+        # if correction != '':
+        #    key = correction
+    
+
     labels_score = {}
     for label in labels:
         labels_score[label] = score(key, label.upper())
     
+
     for id, data in datas.items():
         best_label = ""
         found_key = False
@@ -238,6 +262,7 @@ def search(request):
             if max_height != '' and data[2] > max_height:
                 size_ok = False
         
+
         color_ok = True
         if color == 0 : # 全部
             color_ok = True
@@ -278,9 +303,6 @@ def search(request):
             if data[12] == 0:
                 color_ok = False
         
-        # for i in range(12):
-        #    if color[i] == '1' and data[3+i] == 0:
-        #        color_ok = False
 
         image_ok = True
         value = 0
@@ -297,6 +319,9 @@ def search(request):
 
     if key != '':
         res = sorted(res, key=lambda x:x["score"], reverse=True)
+    
+    # if len(res) > 1000:
+    #    res = res[:1000]
 
     if len(res) < page * 36:
         results = res[36 * (page - 1) : ]

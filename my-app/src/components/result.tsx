@@ -444,7 +444,7 @@ function Result() {
                     window.location.reload()
                   }
                 }
-                >{correction}</Button>
+                >{correction.toString().toLowerCase()}</Button>
             </Stack>
             </FormControl> }
 

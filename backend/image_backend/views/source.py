@@ -27,7 +27,7 @@ def upload(request):
         id: 上传图片的id
     """
     image = request.FILES.get('image')
-    type = image.name.split('.')[1]
+    type = image.name.split('.')[-1]
     id = random.randint(0, 1000)
     path = BASE_DIR / 'upload' / (str(id) + '.' + type)
     with open(path, 'wb+') as f:
