@@ -1,3 +1,4 @@
+import imp
 import json
 import re
 
@@ -13,6 +14,7 @@ import hashlib
 import uuid
 from spellchecker import SpellChecker
 import difflib
+import math
 
 from gensim.models import KeyedVectors
 vectors = KeyedVectors.load('data/vectors.bin')
@@ -60,11 +62,9 @@ def max_sim(word, labels):
     label = ""
     for item in labels:
         s = difflib.SequenceMatcher(None, word, item.upper()).quick_ratio()
-        print(word, item.upper(), s)
         if s > maxv:
             maxv = s
             label = item
-    print(word, label, maxv)
     return label
 
 
@@ -120,6 +120,19 @@ def score(key, label):
             max_score = score
     max_score = max_score / len(label_words)
     return max_score
+    """score = 0
+    for i in range(len(key_words)):
+        maxv = 0
+        for j in range(len(label_words)):
+            try:
+                s = vectors.distance(key_words[i].lower(), label_words[j].lower())
+                print(key_words[i].lower(), label_words[j].lower(), s)
+                if s < 0.35:
+                    maxv = max(maxv, 1.0 - s)
+            except KeyError:
+                continue
+        score += maxv
+    return score / len(label_words)"""
 
 
 def predict(request):
@@ -320,8 +333,8 @@ def search(request):
     if key != '':
         res = sorted(res, key=lambda x:x["score"], reverse=True)
     
-    # if len(res) > 1000:
-    #    res = res[:1000]
+    if len(res) > 5000:
+        res = res[:5000]
 
     if len(res) < page * 36:
         results = res[36 * (page - 1) : ]
