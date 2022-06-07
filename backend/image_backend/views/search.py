@@ -220,7 +220,7 @@ def search(request):
     with open(BASE_DIR / 'data' / 'sorted_labels.json') as f:
         labels = json.loads(f.read())
 
-    
+    key = key.strip()
     key = key.replace("%20", " ")
     correction = ''
     if key != '':
