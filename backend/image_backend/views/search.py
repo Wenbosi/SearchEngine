@@ -250,6 +250,9 @@ def search(request):
                 found_key = True
                 #key_score = key_score + s
         key_score = max_score
+
+        if key == "":
+            found_key = True
         
         if size == 0: # 全部
             size_ok = True

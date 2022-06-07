@@ -104,6 +104,10 @@ function Result() {
     };
 
     const handleCClickOpen = () => {
+      setMinW(0)
+      setMinH(0)
+      setMaxW(10000)
+      setMaxH(10000)
       setCopen(true);
     };
   
@@ -313,7 +317,7 @@ function Result() {
             onClick={
               ()=>{
                 if(copen === false)
-                  setCopen(true)
+                  handleCClickOpen()
               }
             }>自定义</MenuItem>
         </Select>
