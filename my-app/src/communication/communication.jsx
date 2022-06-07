@@ -1,8 +1,8 @@
 import axios from 'axios'
 
-const SEARCH_URL = '/search';
-const PREDICT_URL = '/predict';
-const UPLOAD_URL = '/upload'
+const SEARCH_URL = '/api/search';
+const PREDICT_URL = '/api/predict';
+const UPLOAD_URL = '/api/upload'
 
 export const Search = (message) => {
     return new Promise((resolve, reject) => {
@@ -17,7 +17,7 @@ export const Search = (message) => {
                 let list = []
                 for(let i = 0; i < length; i++) {
                     const item = {
-                        img : "http://127.0.0.1:8000/source?id=" + dataList[i].id,
+                        img : "http://127.0.0.1:8000/api/source?id=" + dataList[i].id,
                         label : dataList[i].label,
                         width : dataList[i].width,
                         height : dataList[i].height,

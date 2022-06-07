@@ -18,8 +18,8 @@ from django.urls import path
 from .views import search, source
 
 urlpatterns = [
-    path('search', search.search),
-    path('source', source.source),
-    path('predict', search.predict),
-    path('upload', source.upload)
+    path('api/search', search.search),
+    path('api/source', source.source),
+    path('api/predict', search.predict),
+    path('api/upload', source.upload)
 ]
